@@ -110,7 +110,7 @@ function TournamentCard({ tournament: t }: { tournament: Tournament }) {
         <p className="text-sm text-gray-500 mb-3">{t.sport.name}</p>
         <div className="flex items-center gap-4 text-xs text-gray-400">
           <span className="flex items-center gap-1">
-            <Users className="h-3 w-3" />{t._count?.entries ?? 0} entries
+            <Users className="h-3 w-3" />{t._count?.events ?? 0} events
           </span>
           {t.startDate && (
             <span className="flex items-center gap-1">
