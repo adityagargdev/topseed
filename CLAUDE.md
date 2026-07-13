@@ -8,6 +8,61 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Track every meaningful change here when a session ends. Read this first in any new session to get fully caught up.
 
+### Session 7 — 2026-07-13
+
+**Mobile responsiveness, UI polish, and full deployment to GitHub + Render + Vercel.**
+
+#### Mobile fixes
+- `client/src/components/layout/Navbar.tsx`: Added hamburger menu (`Menu`/`X` icons) for mobile — previously nav links were `hidden md:flex` with no fallback, making Tournaments unreachable on mobile. Mobile dropdown shows Tournaments, Admin (if applicable), Profile, Sign Out / Sign In. All links close the menu on tap.
+- `client/src/pages/Home.tsx`: Hero padding `py-20` → `py-12 sm:py-20`, title `text-5xl` → `text-4xl sm:text-5xl` to prevent overflow on small screens.
+- `client/src/components/layout/TournamentLayout.tsx`: Tab padding `px-4` → `px-3 sm:px-4`. Bell button extracted outside the scrollable `<nav>` as a fixed `shrink-0` sibling so it doesn't push tabs off-screen.
+
+#### UI improvements (from previous session, applied this session)
+- `Navbar.tsx`: Dark `bg-slate-900` background, white/primary-400 logo, gray-400 icon buttons
+- `Home.tsx`: Gradient hero (slate-900 → blue-950 → slate-900) with subtle grid overlay, live badge, colored top strip on cards, hover lift effect
+- `TournamentList.tsx`: Same card design as Home
+- `client/src/index.css`: Smooth scroll + thin custom scrollbar
+
+#### Scoring Config UI rewrite (`client/src/components/common/EventForm.tsx`)
+- Added `sportName?: string` prop (passed from `Organization.tsx`)
+- `getSportCategory()` maps sport name → `'racket' | 'tennis' | 'volleyball' | 'timed' | 'other'`
+- Sport-specific fields replace raw JSON textarea: racket (games/points/deuce), tennis (sets/games/tiebreak), volleyball (sets/points/final set/deuce), timed (match duration), other (raw JSON fallback)
+- Round Robin events get Win/Draw/Loss points fields below sport fields
+- `configToFields()` / `fieldsToConfig()` handle bidirectional JSON ↔ form conversion for edit mode
+
+#### Other features (from previous session summary)
+- BYE assignment: higher seeds always get BYEs first (`assignByesToTopSeeds` in `bracket.service.ts`)
+- `maxEntries` cap enforced in `registerEntry` and `createOrder`; falls back to `registrationDeadline` when no cap set
+- Email verification enforced: signup sends verification email + signs out immediately; signin checks `emailVerified` flag
+
+#### Deployment
+- Initialized git repo, created GitHub repo: `https://github.com/adityagargdev/topseed`
+- Backend deployed to **Render** (free tier, separate account): `https://topseed.onrender.com`
+  - Build: `npm install --include=dev && npx prisma generate && npm run build`
+  - Start: `npx prisma migrate deploy && node dist/index.js`
+- Frontend deployed to **Vercel**: `https://topseed-lilac.vercel.app`
+  - Root dir: `client`, output: `dist`
+- `client/src/lib/axios.ts`: baseURL uses `VITE_SERVER_URL` env var (falls back to `/api` for local dev)
+- `client/src/hooks/useSocket.ts`: Socket.io connects to `VITE_SERVER_URL` (falls back to `/` for local dev)
+- `vercel.json`: SPA catch-all rewrite added
+- `render.yaml`: service config committed
+- Fixed TS build errors on Vercel: added `"types": ["vite/client"]` to `client/tsconfig.json`; fixed `t._count?.entries` → `t._count?.events` in `Home.tsx`
+- Sports seeded to production DB by running `npx ts-node prisma/seed.ts` locally (Render shell not available on free plan)
+- Firebase authorized domain: `topseed-lilac.vercel.app` added
+- Render `CLIENT_URL` env var set to `https://topseed-lilac.vercel.app`
+
+#### Razorpay test card (works in test mode)
+- Card: `5267 3181 8797 5449`, any future expiry, any CVV, OTP `123456`
+
+---
+
+#### ▶ WHERE TO RESUME NEXT SESSION
+
+1. **Fix double-elimination round labels** — `EliminationBracket.tsx` uses `max - round` heuristic which mislabels LB rounds (known issue, low priority)
+2. **Any bugs found in production** — app is live, real-world testing may surface issues
+
+---
+
 ### Session 6 — 2026-07-13
 
 **Razorpay payment integration — entry fees for paid events.**
