@@ -1,0 +1,299 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  USER
+}
+
+// SINGLES = 1 player/side, DOUBLES = 2 players/side, TEAM = full team
+enum EventType {
+  SINGLES
+  DOUBLES
+  TEAM
+}
+
+enum GenderCategory {
+  MEN
+  WOMEN
+  MIXED
+  OPEN
+}
+
+enum MatchFormat {
+  SINGLE_ELIMINATION
+  DOUBLE_ELIMINATION
+  ROUND_ROBIN
+}
+
+enum TournamentStatus {
+  DRAFT
+  REGISTRATION_OPEN
+  REGISTRATION_CLOSED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum MatchStatus {
+  UPCOMING
+  LIVE
+  COMPLETED
+  WALKOVER
+  CANCELLED
+}
+
+enum AdminRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+model User {
+  id          String   @id @default(cuid())
+  firebaseUid String   @unique
+  displayName String
+  email       String?  @unique
+  phone       String?  @unique
+  photoURL    String?
+  role        UserRole @default(USER)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  adminRequest      AdminRequest?
+  hostedTournaments Tournament[]          @relation("TournamentAdmin")
+  captainOf         Team[]                @relation("TeamCaptain")
+  playerProfile     Player?
+  notifications     Notification[]
+  notifSettings     NotificationSetting[]
+  payments          Payment[]
+}
+
+model AdminRequest {
+  id        String             @id @default(cuid())
+  userId    String             @unique
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reason    String?
+  status    AdminRequestStatus @default(PENDING)
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+}
+
+model Sport {
+  id          String       @id @default(cuid())
+  name        String       @unique
+  icon        String?
+  tournaments Tournament[]
+}
+
+// Tournament is a container (organiser info, dates, sport).
+// All competition specifics live in TournamentEvent.
+model Tournament {
+  id          String           @id @default(cuid())
+  name        String
+  description String?
+  sportId     String
+  sport       Sport            @relation(fields: [sportId], references: [id])
+  adminId     String
+  admin       User             @relation("TournamentAdmin", fields: [adminId], references: [id])
+  status      TournamentStatus @default(DRAFT)
+  isPublic    Boolean          @default(true)
+  password    String?          // bcrypt hash for private tournaments
+
+  // Organisation page fields
+  organizerName        String?
+  address              String?
+  locationUrl          String?
+  venue                String?
+  prizeMoney           String?
+  startDate            DateTime?
+  endDate              DateTime?
+  registrationDeadline DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  events        TournamentEvent[]
+  matches       Match[]           // kept for socket-room lookups
+  notifSettings NotificationSetting[]
+}
+
+// One tournament can have many events (e.g. Men's Singles, Women's Doubles, Under-18 Mixed).
+model TournamentEvent {
+  id           String           @id @default(cuid())
+  tournamentId String
+  tournament   Tournament       @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+
+  name         String           // "Men's Singles", "Mixed Doubles", "Under 18 Girls' Singles"
+  eventType    EventType        // SINGLES | DOUBLES | TEAM
+  gender       GenderCategory   @default(OPEN)
+  ageGroup     String?          // free-text: "U12", "U18", "U21", "35+", "Open", etc.
+  format       MatchFormat
+  status       TournamentStatus @default(DRAFT)
+  maxEntries   Int?
+  entryFee     Int?    // in paise (100 = ₹1), null/0 = free
+
+  // Sport-specific scoring rules for this event
+  // e.g. badminton singles: { gamesPerMatch: 3, pointsPerGame: 21, deuce: true }
+  // e.g. football:          { matchDuration: 90, halfTime: 45, pointsWin: 3, pointsDraw: 1, pointsLoss: 0 }
+  scoringConfig Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  entries  TournamentEntry[]
+  matches  Match[]
+  payments Payment[]
+}
+
+model Team {
+  id        String   @id @default(cuid())
+  name      String
+  captainId String
+  captain   User     @relation("TeamCaptain", fields: [captainId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  players Player[]
+  entries TournamentEntry[]
+}
+
+model Player {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  teamId    String?
+  team      Team?    @relation(fields: [teamId], references: [id])
+  createdAt DateTime @default(now())
+
+  entries TournamentEntry[]
+  // For doubles: a player can be paired with a partner for a specific event entry
+  partnerEntries TournamentEntry[] @relation("DoublesPartner")
+}
+
+// Entry in a specific event (not the tournament directly).
+// One team/player per event enforced by unique constraints.
+// For doubles, partnerId holds the second player.
+model TournamentEntry {
+  id        String          @id @default(cuid())
+  eventId   String
+  event     TournamentEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  // TEAM events
+  teamId    String?
+  team      Team?           @relation(fields: [teamId], references: [id])
+
+  // SINGLES / DOUBLES events — primary registrant
+  playerId  String?
+  player    Player?         @relation(fields: [playerId], references: [id])
+
+  // DOUBLES — second player in the pair
+  partnerId String?
+  partner   Player?         @relation("DoublesPartner", fields: [partnerId], references: [id])
+
+  seed         Int?
+  registeredAt DateTime @default(now())
+
+  matchesAsEntry1 Match[] @relation("MatchEntry1")
+  matchesAsEntry2 Match[] @relation("MatchEntry2")
+  matchesWon      Match[] @relation("MatchWinner")
+  payment         Payment?
+
+  @@unique([eventId, teamId])
+  @@unique([eventId, playerId])
+}
+
+model Payment {
+  id                String          @id @default(cuid())
+  userId            String
+  user              User            @relation(fields: [userId], references: [id])
+  eventId           String
+  event             TournamentEvent @relation(fields: [eventId], references: [id])
+  entryId           String?         @unique
+  entry             TournamentEntry? @relation(fields: [entryId], references: [id])
+  razorpayOrderId   String          @unique
+  razorpayPaymentId String?
+  amount            Int             // in paise
+  status            PaymentStatus   @default(PENDING)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+}
+
+model Match {
+  id           String          @id @default(cuid())
+  tournamentId String
+  tournament   Tournament      @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  eventId      String
+  event        TournamentEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  round        Int
+  matchNumber  Int
+  bracketSlot  String?
+
+  entry1Id String?
+  entry1   TournamentEntry? @relation("MatchEntry1", fields: [entry1Id], references: [id])
+  entry2Id String?
+  entry2   TournamentEntry? @relation("MatchEntry2", fields: [entry2Id], references: [id])
+  winnerId String?
+  winner   TournamentEntry? @relation("MatchWinner", fields: [winnerId], references: [id])
+
+  nextMatchId        String?
+  nextMatchSlot      Int?
+  loserNextMatchId   String?
+  loserNextMatchSlot Int?
+
+  isThirdPlace Boolean     @default(false)
+  status       MatchStatus @default(UPCOMING)
+  scheduledAt  DateTime?
+  completedAt  DateTime?
+
+  // Flexible per-sport score JSON
+  scores Json?
+  notes  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  notifications Notification[]
+}
+
+model Notification {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  matchId      String?
+  match        Match?   @relation(fields: [matchId], references: [id])
+  tournamentId String?
+  title        String
+  body         String
+  read         Boolean  @default(false)
+  createdAt    DateTime @default(now())
+}
+
+model NotificationSetting {
+  id           String      @id @default(cuid())
+  userId       String
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tournamentId String?
+  tournament   Tournament? @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  scoreUpdates Boolean     @default(true)
+  matchStart   Boolean     @default(true)
+  statusChange Boolean     @default(true)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@unique([userId, tournamentId])
+}
