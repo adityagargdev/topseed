@@ -47,7 +47,7 @@ export async function updateMe(req: AuthenticatedRequest, res: Response, next: N
 }
 
 const adminRequestSchema = z.object({
-  reason: z.string().min(10).max(500).optional(),
+  reason: z.string().max(500).optional(),
 })
 
 export async function lookupUser(req: AuthenticatedRequest, res: Response, next: NextFunction) {
