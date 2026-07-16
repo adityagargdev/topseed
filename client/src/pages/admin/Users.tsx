@@ -1,16 +1,16 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { adminApi } from '../../api/admin'
 import { useAuthStore } from '../../store/authStore'
-import { formatDate } from '../../lib/utils'
+import { formatDate, cn } from '../../lib/utils'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 import { User } from '../../types'
 
 const ROLES = ['USER', 'ADMIN', 'SUPER_ADMIN'] as const
 
-const ROLE_COLORS: Record<string, string> = {
-  USER: 'bg-gray-100 text-gray-700',
-  ADMIN: 'bg-blue-100 text-blue-700',
-  SUPER_ADMIN: 'bg-purple-100 text-purple-700',
+const ROLE_TEXT: Record<string, string> = {
+  USER:        'text-tok-muted',
+  ADMIN:       'text-acc3',
+  SUPER_ADMIN: 'text-acc1',
 }
 
 export default function AdminUsers() {
@@ -32,32 +32,31 @@ export default function AdminUsers() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Manage Users</h1>
-        <span className="text-sm text-gray-500">{users?.length ?? 0} users</span>
+        <h1 className="font-display font-bold text-2xl text-tok tracking-tight">Manage Users</h1>
+        <span className="mono-label text-tok-muted">{users?.length ?? 0} users</span>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+      <div className="glass rounded-2xl overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="border-b border-gray-200 bg-gray-50">
+          <thead className="border-b border-tok">
             <tr>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">User</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Contact</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Joined</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Role</th>
+              {['User', 'Contact', 'Joined', 'Role'].map(h => (
+                <th key={h} className="text-left px-4 py-3 mono-label text-tok-muted font-medium">{h}</th>
+              ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-tok">
             {users?.map((u: User & { createdAt?: string }) => (
-              <tr key={u.id} className="hover:bg-gray-50">
+              <tr key={u.id} className="hover:bg-tok-surface transition-colors">
                 <td className="px-4 py-3">
-                  <p className="font-medium text-gray-900">{u.displayName}</p>
-                  <p className="text-xs text-gray-400 font-mono">{u.id.slice(-8)}</p>
+                  <p className="font-medium text-tok">{u.displayName}</p>
+                  <p className="font-mono text-[10px] text-tok-muted opacity-60">{u.id.slice(-8)}</p>
                 </td>
-                <td className="px-4 py-3 text-gray-600">{u.email ?? u.phone ?? '—'}</td>
-                <td className="px-4 py-3 text-gray-500">{formatDate(u.createdAt)}</td>
+                <td className="px-4 py-3 text-tok-muted">{u.email ?? u.phone ?? '—'}</td>
+                <td className="px-4 py-3 mono-label text-tok-muted">{formatDate(u.createdAt)}</td>
                 <td className="px-4 py-3">
                   {u.id === me?.id ? (
-                    <span className={`text-xs font-medium px-2 py-1 rounded-full ${ROLE_COLORS[u.role]}`}>
+                    <span className={cn('glass rounded-full px-2.5 py-1 mono-label', ROLE_TEXT[u.role])}>
                       {u.role} (you)
                     </span>
                   ) : (
@@ -65,11 +64,9 @@ export default function AdminUsers() {
                       value={u.role}
                       onChange={e => roleMutation.mutate({ id: u.id, role: e.target.value })}
                       disabled={roleMutation.isPending}
-                      className="text-xs border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      className="glass rounded-lg px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-tok focus:outline-none"
                     >
-                      {ROLES.map(r => (
-                        <option key={r} value={r}>{r.replace('_', ' ')}</option>
-                      ))}
+                      {ROLES.map(r => <option key={r} value={r}>{r.replace('_', ' ')}</option>)}
                     </select>
                   )}
                 </td>

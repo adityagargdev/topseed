@@ -5,8 +5,8 @@ import { Search, Plus } from 'lucide-react'
 import { tournamentApi } from '../../api/tournaments'
 import { sportApi } from '../../api/sports'
 import { useAuthStore } from '../../store/authStore'
-import { cn, formatDate, STATUS_COLORS } from '../../lib/utils'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
+import TournamentCard from '../../components/tournaments/TournamentCard'
 
 const STATUSES = ['', 'REGISTRATION_OPEN', 'IN_PROGRESS', 'COMPLETED']
 
@@ -32,33 +32,31 @@ export default function TournamentList() {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Tournaments</h1>
+        <h1 className="font-display font-bold text-2xl text-tok tracking-tight">Tournaments</h1>
         {isAdmin && (
-          <Link
-            to="/tournaments/create"
-            className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors"
-          >
+          <Link to="/tournaments/create" className="btn-primary text-sm py-2 px-4">
             <Plus className="h-4 w-4" /> New Tournament
           </Link>
         )}
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-3">
-        <div className="relative flex-1 min-w-48">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+      <div className="flex flex-wrap gap-2">
+        <div className="relative flex-1 min-w-44">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-tok-muted" />
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Search tournaments..."
-            className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            placeholder="Search tournaments…"
+            className="w-full glass rounded-xl pl-9 pr-3 py-2 text-sm text-tok placeholder:text-tok-muted focus:outline-none focus:ring-2 ring-tok transition-shadow"
           />
         </div>
         <select
           value={sportFilter}
           onChange={e => setSportFilter(e.target.value)}
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+          className="glass rounded-xl px-3 py-2 font-mono text-[11px] uppercase tracking-wider text-tok focus:outline-none focus:ring-2 ring-tok transition-shadow"
         >
           <option value="">All Sports</option>
           {sports?.map(s => <option key={s.id} value={s.name}>{s.icon} {s.name}</option>)}
@@ -66,39 +64,24 @@ export default function TournamentList() {
         <select
           value={statusFilter}
           onChange={e => setStatusFilter(e.target.value)}
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+          className="glass rounded-xl px-3 py-2 font-mono text-[11px] uppercase tracking-wider text-tok focus:outline-none focus:ring-2 ring-tok transition-shadow"
         >
-          {STATUSES.map(s => <option key={s} value={s}>{s || 'All Status'}</option>)}
+          {STATUSES.map(s => (
+            <option key={s} value={s}>{s ? s.replace(/_/g, ' ') : 'All Status'}</option>
+          ))}
         </select>
       </div>
 
-      {/* List */}
+      {/* Results */}
       {isLoading ? (
         <LoadingSpinner className="py-16" />
       ) : !tournaments?.length ? (
-        <div className="text-center py-16 text-gray-500">No tournaments found.</div>
+        <div className="py-16 border border-dashed border-tok rounded-2xl text-center">
+          <p className="mono-label text-tok-muted">No tournaments found</p>
+        </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {tournaments.map(t => (
-            <Link
-              key={t.id}
-              to={`/tournaments/${t.id}/organization`}
-              className="group bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 block"
-            >
-              <div className="h-1 w-full bg-gradient-to-r from-primary-500 to-blue-400" />
-              <div className="p-5">
-                <div className="flex items-start justify-between mb-4">
-                  <span className="text-3xl leading-none">{t.sport.icon ?? '🏆'}</span>
-                  <span className={cn('text-xs font-semibold px-2.5 py-1 rounded-full', STATUS_COLORS[t.status])}>
-                    {t.status.replace(/_/g, ' ')}
-                  </span>
-                </div>
-                <h3 className="font-semibold text-gray-900 line-clamp-1 mb-1 group-hover:text-primary-700 transition-colors">{t.name}</h3>
-                <p className="text-sm text-gray-500 mb-2">{t.sport.name}</p>
-                {t.startDate && <p className="text-xs text-gray-400">{formatDate(t.startDate)} – {formatDate(t.endDate)}</p>}
-              </div>
-            </Link>
-          ))}
+          {tournaments.map(t => <TournamentCard key={t.id} tournament={t} />)}
         </div>
       )}
     </div>

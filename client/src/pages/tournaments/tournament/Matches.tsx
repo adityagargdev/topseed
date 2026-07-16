@@ -9,7 +9,8 @@ import { useSocket, getSocket } from '../../../hooks/useSocket'
 import { useAuthStore } from '../../../store/authStore'
 import EventSelector from '../../../components/common/EventSelector'
 import ScoreModal from '../../../components/matches/ScoreModal'
-import { cn, getEntryName, STATUS_COLORS, formatDateTime } from '../../../lib/utils'
+import StatusPill from '../../../components/common/StatusPill'
+import { cn, getEntryName, formatDateTime } from '../../../lib/utils'
 import { Match } from '../../../types'
 import LoadingSpinner from '../../../components/common/LoadingSpinner'
 
@@ -43,29 +44,30 @@ export default function Matches() {
   }, [refetch])
 
   const isAdmin = !!user && (user.id === tournament?.adminId || user.role === 'SUPER_ADMIN')
-
-  const grouped = groupByDate(matches ?? [])
-  const dates = Object.keys(grouped).sort()
+  const grouped  = groupByDate(matches ?? [])
+  const dates    = Object.keys(grouped).sort()
 
   return (
     <div className="space-y-4">
       <EventSelector events={events} selectedId={selectedEventId} onChange={setEventId} />
 
       <div className="flex items-center gap-3">
-        <label className="text-sm font-medium text-gray-700">Date:</label>
+        <label className="mono-label text-tok-muted">Date:</label>
         <input
           type="date"
           value={selectedDate}
           onChange={e => setSelectedDate(e.target.value)}
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+          className="glass rounded-xl px-3 py-2 text-sm text-tok focus:outline-none focus:ring-2 ring-tok transition-shadow"
         />
         {selectedDate && (
-          <button onClick={() => setSelectedDate('')} className="text-xs text-gray-500 hover:text-gray-700">Clear</button>
+          <button onClick={() => setSelectedDate('')} className="mono-label text-tok-muted hover:text-tok transition-colors">
+            Clear
+          </button>
         )}
       </div>
 
       {isAdmin && (
-        <p className="text-xs text-gray-500 flex items-center gap-1">
+        <p className="mono-label text-tok-muted flex items-center gap-1">
           <Pencil className="h-3 w-3" /> Click any match to update score or schedule.
         </p>
       )}
@@ -73,14 +75,16 @@ export default function Matches() {
       {isLoading ? (
         <LoadingSpinner className="py-16" />
       ) : !matches?.length ? (
-        <div className="text-center py-16 text-gray-500">No matches found.</div>
+        <div className="text-center py-16">
+          <p className="mono-label text-tok-muted">No matches found.</p>
+        </div>
       ) : dates.length > 0 ? (
         dates.map(date => (
           <div key={date}>
-            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
+            <h3 className="mono-label text-tok-muted mb-3">
               {format(new Date(date), 'EEEE, d MMMM yyyy')}
             </h3>
-            <div className="space-y-3">
+            <div className="space-y-2">
               {grouped[date].map(m => (
                 <MatchRow key={m.id} match={m} isAdmin={isAdmin} onEdit={setEditingMatch} />
               ))}
@@ -88,10 +92,8 @@ export default function Matches() {
           </div>
         ))
       ) : (
-        <div className="space-y-3">
-          {matches.map(m => (
-            <MatchRow key={m.id} match={m} isAdmin={isAdmin} onEdit={setEditingMatch} />
-          ))}
+        <div className="space-y-2">
+          {matches.map(m => <MatchRow key={m.id} match={m} isAdmin={isAdmin} onEdit={setEditingMatch} />)}
         </div>
       )}
 
@@ -110,27 +112,25 @@ function MatchRow({ match: m, isAdmin, onEdit }: { match: Match; isAdmin: boolea
   return (
     <div
       className={cn(
-        'bg-white border border-gray-200 rounded-xl p-4 transition-shadow',
-        isAdmin ? 'cursor-pointer hover:shadow-md hover:border-primary-200' : ''
+        'glass rounded-xl p-4 transition-colors',
+        isAdmin ? 'cursor-pointer hover:border-acc1/40' : ''
       )}
       onClick={() => isAdmin && onEdit(m)}
     >
       <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <span className={cn('text-xs font-medium px-2 py-0.5 rounded-full', STATUS_COLORS[m.status])}>
-            {m.status}
-          </span>
-          <span className="text-xs text-gray-400">{m.bracketSlot}</span>
-          {m.event && <span className="text-xs text-gray-400">· {m.event.name}</span>}
+        <div className="flex items-center gap-2 flex-wrap">
+          <StatusPill status={m.status} />
+          <span className="mono-label text-tok-muted">{m.bracketSlot}</span>
+          {m.event && <span className="mono-label text-tok-muted">· {m.event.name}</span>}
         </div>
         <div className="flex items-center gap-2">
-          {m.scheduledAt && <span className="text-xs text-gray-500">{formatDateTime(m.scheduledAt)}</span>}
-          {isAdmin && <Pencil className="h-3.5 w-3.5 text-gray-400" />}
+          {m.scheduledAt && <span className="mono-label text-tok-muted">{formatDateTime(m.scheduledAt)}</span>}
+          {isAdmin && <Pencil className="h-3.5 w-3.5 text-tok-muted" />}
         </div>
       </div>
       <div className="flex items-center gap-4">
         <EntryBlock name={getEntryName(m.entry1)} isWinner={!!m.winnerId && m.winnerId === m.entry1Id} score={getScore(m.scores, 'entry1')} />
-        <span className="text-gray-400 font-medium text-sm shrink-0">vs</span>
+        <span className="mono-label text-tok-muted shrink-0">vs</span>
         <EntryBlock name={getEntryName(m.entry2)} isWinner={!!m.winnerId && m.winnerId === m.entry2Id} score={getScore(m.scores, 'entry2')} right />
       </div>
     </div>
@@ -140,8 +140,8 @@ function MatchRow({ match: m, isAdmin, onEdit }: { match: Match; isAdmin: boolea
 function EntryBlock({ name, isWinner, score, right }: { name: string; isWinner: boolean; score: string | null; right?: boolean }) {
   return (
     <div className={cn('flex-1 flex items-center gap-3', right ? 'flex-row-reverse text-right' : '')}>
-      <span className={cn('font-medium text-sm truncate', isWinner ? 'text-green-700' : 'text-gray-900')}>{name}</span>
-      {score != null && <span className={cn('text-xl font-bold shrink-0', isWinner ? 'text-green-700' : 'text-gray-700')}>{score}</span>}
+      <span className={cn('font-medium text-sm truncate', isWinner ? 'text-acc1' : 'text-tok')}>{name}</span>
+      {score != null && <span className={cn('text-xl font-bold shrink-0', isWinner ? 'text-acc1' : 'text-tok')}>{score}</span>}
     </div>
   )
 }

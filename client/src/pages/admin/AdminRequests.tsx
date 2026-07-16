@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Check, X } from 'lucide-react'
 import { adminApi } from '../../api/admin'
-import { formatDate } from '../../lib/utils'
+import { formatDate, cn } from '../../lib/utils'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 
 export default function AdminRequests() {
@@ -24,19 +24,21 @@ export default function AdminRequests() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">Admin Requests</h1>
+      <h1 className="font-display font-bold text-2xl text-tok tracking-tight">Admin Requests</h1>
 
       {!requests?.length ? (
-        <p className="text-gray-500">No requests yet.</p>
+        <p className="mono-label text-tok-muted">No requests yet.</p>
       ) : (
         <div className="space-y-3">
           {requests.map(req => (
-            <div key={req.id} className="bg-white border border-gray-200 rounded-xl p-5 flex items-start justify-between gap-4">
+            <div key={req.id} className="glass rounded-2xl p-5 flex items-start justify-between gap-4">
               <div>
-                <p className="font-semibold text-gray-900">{req.user.displayName}</p>
-                <p className="text-sm text-gray-500">{req.user.email ?? req.user.phone}</p>
-                {req.reason && <p className="text-sm text-gray-700 mt-1 italic">"{req.reason}"</p>}
-                <p className="text-xs text-gray-400 mt-1">{formatDate(req.createdAt)}</p>
+                <p className="font-semibold text-tok">{req.user.displayName}</p>
+                <p className="text-sm text-tok-muted">{req.user.email ?? req.user.phone}</p>
+                {req.reason && (
+                  <p className="text-sm text-tok mt-1 italic opacity-70">"{req.reason}"</p>
+                )}
+                <p className="mono-label text-tok-muted mt-1">{formatDate(req.createdAt)}</p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 {req.status === 'PENDING' ? (
@@ -44,20 +46,29 @@ export default function AdminRequests() {
                     <button
                       onClick={() => approveMutation.mutate(req.id)}
                       disabled={approveMutation.isPending}
-                      className="flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50"
+                      className={cn(
+                        'inline-flex items-center gap-1 px-3 py-1.5 rounded-full',
+                        'bg-acc2 text-white mono-label hover:opacity-90 disabled:opacity-50'
+                      )}
                     >
-                      <Check className="h-4 w-4" /> Approve
+                      <Check className="h-3.5 w-3.5" /> Approve
                     </button>
                     <button
                       onClick={() => rejectMutation.mutate(req.id)}
                       disabled={rejectMutation.isPending}
-                      className="flex items-center gap-1 px-3 py-1.5 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50"
+                      className={cn(
+                        'inline-flex items-center gap-1 px-3 py-1.5 rounded-full',
+                        'bg-red-500 text-white mono-label hover:opacity-90 disabled:opacity-50'
+                      )}
                     >
-                      <X className="h-4 w-4" /> Reject
+                      <X className="h-3.5 w-3.5" /> Reject
                     </button>
                   </>
                 ) : (
-                  <span className={`text-sm font-medium px-3 py-1.5 rounded-lg ${req.status === 'APPROVED' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                  <span className={cn(
+                    'glass rounded-full px-3 py-1.5 mono-label',
+                    req.status === 'APPROVED' ? 'text-acc2' : 'text-red-500'
+                  )}>
                     {req.status}
                   </span>
                 )}

@@ -2,26 +2,152 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Design tokens ──────────────────────────────────── */
+:root {
+  --bg:             #fdf3f6;
+  --surface:        rgba(255, 255, 255, 0.55);
+  --surface-solid:  #ffffff;
+  --text-primary:   #33202b;
+  --text-secondary: rgba(70, 40, 55, 0.6);
+  --border:         rgba(70, 40, 55, 0.1);
+  --accent-1:       #ec4899;
+  --accent-2:       #8b5cf6;
+  --accent-3:       #38bdf8;
+  --blob-1:         rgba(236, 72,  153, 0.22);
+  --blob-2:         rgba(139, 92,  246, 0.18);
+  --blob-3:         rgba(56,  189, 248, 0.18);
+  --ring:           rgba(236, 72, 153, 0.4);
+}
+
+.dark {
+  --bg:             #060812;
+  --surface:        rgba(255, 255, 255, 0.07);
+  --surface-solid:  #0f1120;
+  --text-primary:   #f4f5fb;
+  --text-secondary: rgba(230, 233, 245, 0.6);
+  --border:         rgba(255, 255, 255, 0.12);
+  --accent-1:       #5b7cff;
+  --accent-2:       #a855f7;
+  --accent-3:       #22d3ee;
+  --blob-1:         rgba(91,  124, 255, 0.22);
+  --blob-2:         rgba(168, 85,  247, 0.18);
+  --blob-3:         rgba(34,  211, 238, 0.16);
+  --ring:           rgba(91, 124, 255, 0.4);
+}
+
+/* ── Base ───────────────────────────────────────────── */
 @layer base {
-  html {
-    scroll-behavior: smooth;
-  }
+  html { scroll-behavior: smooth; }
 
   body {
-    @apply text-gray-900 antialiased bg-gray-50;
+    @apply antialiased;
+    background-color: var(--bg);
+    color: var(--text-primary);
+    font-family: 'Sora', ui-sans-serif, system-ui;
   }
 
-  ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 9999px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--accent-2); }
+
+  input, select, textarea, button { font-family: inherit; }
+}
+
+/* ── Component utilities ────────────────────────────── */
+@layer components {
+  /* Glass card — the primary surface for the app */
+  .glass {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
   }
-  ::-webkit-scrollbar-track {
-    @apply bg-transparent;
+
+  /* Solid surface (for modals / drawers over glass) */
+  .surface {
+    background: var(--surface-solid);
+    border: 1px solid var(--border);
   }
-  ::-webkit-scrollbar-thumb {
-    @apply bg-gray-300 rounded-full;
+
+  /* Animated gradient text for the hero headline */
+  .gradient-text {
+    background: linear-gradient(
+      270deg,
+      var(--accent-1), var(--accent-2), var(--accent-3),
+      var(--accent-2), var(--accent-1)
+    );
+    background-size: 400% 400%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: gradShift 5s ease infinite;
   }
-  ::-webkit-scrollbar-thumb:hover {
-    @apply bg-gray-400;
+
+  /* Mono label */
+  .mono-label {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
   }
+
+  /* Primary accent button */
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--accent-1);
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 0.875rem;
+    padding: 0.625rem 1.5rem;
+    border-radius: 9999px;
+    transition: opacity 0.15s, transform 0.15s;
+  }
+  .btn-primary:hover { opacity: 0.88; }
+  .btn-primary:active { transform: scale(0.97); }
+  .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  /* Ghost button (glass outline) */
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: var(--text-primary);
+    font-weight: 500;
+    font-size: 0.875rem;
+    padding: 0.625rem 1.5rem;
+    border-radius: 9999px;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .btn-ghost:hover { border-color: var(--accent-1); }
+}
+
+/* ── Token-based utilities ──────────────────────────── */
+@layer utilities {
+  .bg-tok-bg      { background-color: var(--bg); }
+  .bg-tok-surface { background: var(--surface); }
+  .text-tok       { color: var(--text-primary); }
+  .text-tok-muted { color: var(--text-secondary); }
+  .border-tok     { border-color: var(--border); }
+  .text-acc1      { color: var(--accent-1); }
+  .text-acc2      { color: var(--accent-2); }
+  .text-acc3      { color: var(--accent-3); }
+  .bg-acc1        { background-color: var(--accent-1); }
+  .bg-acc2        { background-color: var(--accent-2); }
+  .ring-tok       { --tw-ring-color: var(--ring); }
+}
+
+/* ── Grain noise overlay (film texture) ─────────────── */
+.hero-grain {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.88' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 160px 160px;
+  opacity: 0.032;
+  pointer-events: none;
 }

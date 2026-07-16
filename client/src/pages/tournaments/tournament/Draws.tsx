@@ -58,20 +58,20 @@ export default function Draws() {
     },
   })
 
-  const hasMatches = (matches?.length ?? 0) > 0
-  const entryCount = entries?.length ?? 0
+  const hasMatches  = (matches?.length ?? 0) > 0
+  const entryCount  = entries?.length ?? 0
 
   return (
     <div>
       <EventSelector events={events} selectedId={selectedEventId} onChange={setEventId} />
 
-      {/* Admin fixture generation panel */}
+      {/* Admin fixture panel */}
       {isAdmin && selectedEventId && (
-        <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-xl">
+        <div className="mb-6 glass rounded-2xl p-4">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div>
-              <p className="text-sm font-semibold text-gray-800">Fixture Generation</p>
-              <p className="text-xs text-gray-500 mt-0.5">
+              <p className="font-semibold text-tok text-sm">Fixture Generation</p>
+              <p className="mono-label text-tok-muted mt-0.5">
                 {entryCount} {entryCount === 1 ? 'entry' : 'entries'} registered ·{' '}
                 {selectedEvent?.format.replace(/_/g, ' ')} format
               </p>
@@ -81,54 +81,52 @@ export default function Draws() {
               <button
                 onClick={() => generateMutation.mutate()}
                 disabled={generateMutation.isPending || entryCount < 2}
-                className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 disabled:opacity-50"
+                className="btn-primary text-sm"
               >
                 <Shuffle className="h-4 w-4" />
                 {generateMutation.isPending ? 'Generating…' : 'Generate Fixtures'}
               </button>
             ) : confirmRegen ? (
-              <div className="flex items-center gap-2">
-                <span className="flex items-center gap-1 text-xs text-orange-700 bg-orange-50 px-2 py-1 rounded-lg">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="glass inline-flex items-center gap-1 rounded-full px-2.5 py-1 mono-label text-orange-500">
                   <AlertTriangle className="h-3 w-3" /> This clears all existing match data.
                 </span>
                 <button
                   onClick={() => generateMutation.mutate()}
                   disabled={generateMutation.isPending}
-                  className="px-3 py-1.5 bg-orange-600 text-white rounded-lg text-xs font-medium hover:bg-orange-700 disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 bg-orange-500 text-white text-xs font-semibold px-3 py-1.5 rounded-full hover:opacity-90 disabled:opacity-50"
                 >
                   {generateMutation.isPending ? 'Regenerating…' : 'Confirm Regenerate'}
                 </button>
                 <button
                   onClick={() => setConfirmRegen(false)}
-                  className="px-3 py-1.5 border border-gray-300 text-gray-600 rounded-lg text-xs font-medium hover:bg-gray-100"
+                  className="btn-ghost text-xs py-1.5 px-3"
                 >
                   Cancel
                 </button>
               </div>
             ) : (
-              <button
-                onClick={() => setConfirmRegen(true)}
-                className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-100"
-              >
-                <RefreshCw className="h-4 w-4" />
-                Regenerate
+              <button onClick={() => setConfirmRegen(true)} className="btn-ghost text-sm">
+                <RefreshCw className="h-4 w-4" /> Regenerate
               </button>
             )}
           </div>
           {generateMutation.isError && (
-            <p className="text-xs text-red-600 mt-2">Failed to generate fixtures. Make sure there are at least 2 registered entries.</p>
+            <p className="mono-label text-red-500 mt-2">
+              Failed to generate. Make sure there are at least 2 registered entries.
+            </p>
           )}
         </div>
       )}
 
       {!selectedEventId ? (
-        <p className="text-gray-500 text-sm">No events found for this tournament.</p>
+        <p className="mono-label text-tok-muted">No events found for this tournament.</p>
       ) : isLoading ? (
         <LoadingSpinner className="py-16" />
       ) : !matches?.length ? (
         <div className="text-center py-16">
-          <p className="text-gray-500">
-            {isAdmin ? 'Use the panel above to generate fixtures.' : 'Fixtures have not been generated for this event yet.'}
+          <p className="mono-label text-tok-muted">
+            {isAdmin ? 'Use the panel above to generate fixtures.' : 'Fixtures have not been generated yet.'}
           </p>
         </div>
       ) : selectedEvent?.format === 'ROUND_ROBIN' ? (

@@ -29,14 +29,54 @@ export function getEntryName(entry: {
   return 'TBD'
 }
 
+// Legacy — kept for untouched internal components (EliminationBracket, ScoreModal, etc.)
 export const STATUS_COLORS: Record<string, string> = {
-  DRAFT: 'bg-gray-100 text-gray-700',
-  REGISTRATION_OPEN: 'bg-green-100 text-green-700',
-  REGISTRATION_CLOSED: 'bg-yellow-100 text-yellow-700',
-  IN_PROGRESS: 'bg-blue-100 text-blue-700',
-  COMPLETED: 'bg-purple-100 text-purple-700',
-  CANCELLED: 'bg-red-100 text-red-700',
-  UPCOMING: 'bg-gray-100 text-gray-600',
-  LIVE: 'bg-red-100 text-red-700 animate-pulse',
-  WALKOVER: 'bg-orange-100 text-orange-700',
+  DRAFT:               'bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300',
+  REGISTRATION_OPEN:   'bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-300',
+  REGISTRATION_CLOSED: 'bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300',
+  IN_PROGRESS:         'bg-pink-100 text-pink-700 dark:bg-pink-500/20 dark:text-pink-300',
+  COMPLETED:           'bg-gray-100 text-gray-500 dark:bg-white/10 dark:text-gray-400',
+  CANCELLED:           'bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-300',
+  UPCOMING:            'bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300',
+  LIVE:                'bg-pink-100 text-pink-700 dark:bg-pink-500/20 dark:text-pink-300',
+  WALKOVER:            'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300',
+}
+
+// New-design dot indicator
+export const STATUS_DOT: Record<string, string> = {
+  DRAFT:               'bg-gray-400',
+  REGISTRATION_OPEN:   'bg-violet-500',
+  REGISTRATION_CLOSED: 'bg-gray-400',
+  IN_PROGRESS:         'bg-pink-500',
+  COMPLETED:           'bg-gray-400',
+  CANCELLED:           'bg-red-500',
+  WALKOVER:            'bg-orange-400',
+  LIVE:                'bg-pink-500',
+  UPCOMING:            'bg-gray-400',
+}
+
+// Short human labels
+export const STATUS_LABEL: Record<string, string> = {
+  DRAFT:               'Draft',
+  REGISTRATION_OPEN:   'Open',
+  REGISTRATION_CLOSED: 'Closed',
+  IN_PROGRESS:         'Live',
+  COMPLETED:           'Done',
+  CANCELLED:           'Cancelled',
+  WALKOVER:            'Walkover',
+  LIVE:                'Live',
+  UPCOMING:            'Upcoming',
+}
+
+// Text colour for dot+label combos
+export const STATUS_TEXT: Record<string, string> = {
+  DRAFT:               'text-gray-400',
+  REGISTRATION_OPEN:   'text-violet-500',
+  REGISTRATION_CLOSED: 'text-gray-400',
+  IN_PROGRESS:         'text-pink-500',
+  COMPLETED:           'text-gray-400',
+  CANCELLED:           'text-red-500',
+  WALKOVER:            'text-orange-500',
+  LIVE:                'text-pink-500',
+  UPCOMING:            'text-gray-400',
 }
