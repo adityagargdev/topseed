@@ -8,6 +8,46 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Track every meaningful change here when a session ends. Read this first in any new session to get fully caught up.
 
+### Session 8 — 2026-07-17
+
+**Admin guest entry and custom draw — organizers can now add players by name and define matchups manually.**
+
+#### Schema changes
+- Added `guestName String?` and `guestPartnerName String?` to `TournamentEntry`
+- Added `@@unique([eventId, guestName])` constraint
+- Migration: `20260717000000_add_guest_entry` (applied to Neon via `db push`; migration file committed for Render's `prisma migrate deploy`)
+
+#### Server changes (`server/src/controllers/tournament.controller.ts`)
+- `addGuestEntry` — new admin-only handler: `POST /api/tournaments/:id/entries`. Takes `{ eventId, name, partnerName? }`, creates a `TournamentEntry` with `guestName` set (no Firebase account needed). Respects `maxEntries` cap.
+- `removeEntry` — new admin-only handler: `DELETE /api/tournaments/:id/entries/:entryId`. Deletes any entry by ID (guest or registered).
+- Both wired in `server/src/routes/tournament.routes.ts`
+
+#### Client changes
+- `client/src/types/index.ts`: added `guestName?: string | null` and `guestPartnerName?: string | null` to `TournamentEntry`
+- `client/src/lib/utils.ts`: `getEntryName()` now handles `guestName` — returns `"Name"` for singles guests, `"Name / PartnerName"` for doubles guests. Falls back to `'TBD'` if none of team/player/guestName is set.
+- `client/src/api/tournaments.ts`: added `addGuestEntry(tournamentId, eventId, name, partnerName?)` and `removeEntry(tournamentId, entryId)`
+- `client/src/pages/tournaments/tournament/Players.tsx`:
+  - `AdminAddPanel` component — shown to admins above the entry list regardless of event status. Single name input for SINGLES/TEAM; two inputs for DOUBLES. Calls `addGuestEntry` on submit.
+  - `EntryCard` now accepts `isAdmin` + `onRemove` props — renders an ✕ button (top-right) for admins to delete any entry.
+  - Guest entries show a "Guest" label.
+- `client/src/pages/tournaments/tournament/Draws.tsx`:
+  - "Auto Generate" button renamed (was "Generate Fixtures") to distinguish from new option
+  - New "Custom Draw" toggle button in the admin fixture panel (visible when ≥2 entries exist)
+  - `CustomDrawPanel` component: click-to-pair UX — admin clicks an entry chip to select it, clicks a second to pair them as a match. Pairs listed as `R1 M1`, `R1 M2`, etc. with ✕ to unpair. "Create Draw" submits pairs via `generateFixtures(mode='manual')`. Warns if one entry is left unpaired (BYE).
+
+#### Committed & pushed
+- Commit: `bb9e4c8` — pushed to `https://github.com/adityagargdev/topseed`
+- Render will auto-apply the migration on next deploy
+
+---
+
+#### ▶ WHERE TO RESUME NEXT SESSION
+
+1. **Fix double-elimination round labels** — `EliminationBracket.tsx` uses `max - round` heuristic which mislabels LB rounds (known issue, low priority)
+2. **Any bugs found in production** — app is live, real-world testing may surface issues
+
+---
+
 ### Session 7 — 2026-07-13
 
 **Mobile responsiveness, UI polish, and full deployment to GitHub + Render + Vercel.**
@@ -367,7 +407,7 @@ cd client && npm run build
 
 - **`Tournament.scoringConfig`** (JSON) — admin-defined sport-specific rules, e.g. `{ matchDuration: 90, pointsWin: 3 }`.
 - **`Match.scores`** (JSON) — flexible per-sport score shape, e.g. `{ entry1: { goals: 2 }, entry2: { goals: 1 } }`.
-- **`TournamentEntry`** — polymorphic: either `teamId` or `playerId` is set (enforced by unique constraints).
+- **`TournamentEntry`** — polymorphic: `teamId`, `playerId`, or `guestName` is set. Guest entries (admin-added, no Firebase account) use `guestName`/`guestPartnerName`. Unique constraints cover all three cases per event.
 - **`Match.nextMatchId` / `loserNextMatchId`** — wire bracket advancement. Set by `generateFixtures` controller after batch-inserting all matches.
 - **`NotificationSetting`** — per-user per-tournament opt-in flags (`scoreUpdates`, `matchStart`, `statusChange`).
 
