@@ -1,6 +1,7 @@
 import { useParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
+import { UserPlus, X } from 'lucide-react'
 import { tournamentApi } from '../../../api/tournaments'
 import { paymentApi } from '../../../api/payments'
 import { useEventId } from '../../../hooks/useEventId'
@@ -32,6 +33,13 @@ export default function Players() {
   const [activeLetter, setActiveLetter] = useState<string | null>(null)
 
   const selectedEvent = events.find(e => e.id === selectedEventId)
+
+  const { data: tournament } = useQuery({
+    queryKey: ['tournament', id],
+    queryFn: () => tournamentApi.get(id!),
+    enabled: !!id,
+  })
+  const isAdmin = !!user && (user.id === tournament?.adminId || user.role === 'SUPER_ADMIN')
 
   const { data: entries, isLoading } = useQuery({
     queryKey: ['tournament', id, 'entries', selectedEventId],
@@ -99,9 +107,23 @@ export default function Players() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['tournament', id, 'entries', selectedEventId] }),
   })
 
+  const removeEntryMutation = useMutation({
+    mutationFn: (entryId: string) => tournamentApi.removeEntry(id!, entryId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['tournament', id, 'entries', selectedEventId] }),
+  })
+
   return (
     <div className="space-y-6">
       <EventSelector events={events} selectedId={selectedEventId} onChange={setEventId} />
+
+      {isAdmin && selectedEventId && selectedEvent && (
+        <AdminAddPanel
+          tournamentId={id!}
+          eventId={selectedEventId}
+          eventType={selectedEvent.eventType}
+          onAdded={() => qc.invalidateQueries({ queryKey: ['tournament', id, 'entries', selectedEventId] })}
+        />
+      )}
 
       {selectedEvent?.status === 'REGISTRATION_OPEN' && user && (
         <RegistrationPanel
@@ -165,7 +187,14 @@ export default function Players() {
                 <div key={letter}>
                   <h3 className="mono-label text-acc1 border-b border-tok pb-2 mb-3">{letter}</h3>
                   <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    {letterEntries.map(entry => <EntryCard key={entry.id} entry={entry} />)}
+                    {letterEntries.map(entry => (
+                      <EntryCard
+                        key={entry.id}
+                        entry={entry}
+                        isAdmin={isAdmin}
+                        onRemove={() => removeEntryMutation.mutate(entry.id)}
+                      />
+                    ))}
                   </div>
                 </div>
               ))}
@@ -247,10 +276,73 @@ function RegistrationPanel({
   )
 }
 
-function EntryCard({ entry }: { entry: TournamentEntry }) {
+function AdminAddPanel({
+  tournamentId, eventId, eventType, onAdded,
+}: {
+  tournamentId: string; eventId: string; eventType: string; onAdded: () => void
+}) {
+  const [name, setName] = useState('')
+  const [partnerName, setPartnerName] = useState('')
+  const [error, setError] = useState('')
+
+  const addMutation = useMutation({
+    mutationFn: () => tournamentApi.addGuestEntry(
+      tournamentId, eventId, name.trim(),
+      eventType === 'DOUBLES' && partnerName.trim() ? partnerName.trim() : undefined
+    ),
+    onSuccess: () => { setName(''); setPartnerName(''); setError(''); onAdded() },
+    onError: (err: Error) => setError(err.message),
+  })
+
   return (
-    <div className="glass rounded-xl p-4">
-      <p className="font-semibold text-tok">{getEntryName(entry)}</p>
+    <div className="glass rounded-2xl p-4">
+      <p className="font-semibold text-tok text-sm mb-3 flex items-center gap-2">
+        <UserPlus size={15} className="text-acc1" /> Add Player (admin)
+      </p>
+      {error && <p className="text-sm text-red-500 mb-2">{error}</p>}
+      <div className="flex flex-wrap gap-2">
+        <input
+          value={name}
+          onChange={e => setName(e.target.value)}
+          placeholder={eventType === 'DOUBLES' ? 'Player 1 name' : 'Player name'}
+          className="flex-1 min-w-0 glass rounded-xl px-3 py-2 text-sm text-tok placeholder:text-tok-muted focus:outline-none focus:ring-2 ring-tok transition-shadow"
+        />
+        {eventType === 'DOUBLES' && (
+          <input
+            value={partnerName}
+            onChange={e => setPartnerName(e.target.value)}
+            placeholder="Player 2 name"
+            className="flex-1 min-w-0 glass rounded-xl px-3 py-2 text-sm text-tok placeholder:text-tok-muted focus:outline-none focus:ring-2 ring-tok transition-shadow"
+          />
+        )}
+        <button
+          onClick={() => addMutation.mutate()}
+          disabled={addMutation.isPending || !name.trim()}
+          className="btn-primary shrink-0"
+        >
+          {addMutation.isPending ? 'Adding…' : 'Add'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function EntryCard({ entry, isAdmin, onRemove }: { entry: TournamentEntry; isAdmin: boolean; onRemove: () => void }) {
+  return (
+    <div className="glass rounded-xl p-4 relative">
+      {isAdmin && (
+        <button
+          onClick={onRemove}
+          title="Remove entry"
+          className="absolute top-3 right-3 text-tok-muted hover:text-red-500 transition-colors"
+        >
+          <X size={14} />
+        </button>
+      )}
+      <p className="font-semibold text-tok pr-5">{getEntryName(entry)}</p>
+      {entry.guestName && (
+        <span className="mono-label text-tok-muted">Guest</span>
+      )}
       {entry.partner && <p className="mono-label text-tok-muted mt-1">Partner: {entry.partner.user.displayName}</p>}
       {entry.team && (
         <div className="mt-2 space-y-1">

@@ -296,6 +296,43 @@ export async function registerEntry(req: AuthenticatedRequest, res: Response, ne
   }
 }
 
+export async function addGuestEntry(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+  try {
+    const t = await prisma.tournament.findUniqueOrThrow({ where: { id: req.params.id } })
+    if (t.adminId !== req.user!.id && req.user!.role !== 'SUPER_ADMIN') throw new AppError('Forbidden', 403)
+
+    const { eventId, name, partnerName } = req.body as { eventId: string; name: string; partnerName?: string }
+    if (!eventId) throw new AppError('eventId is required', 400)
+    if (!name?.trim()) throw new AppError('name is required', 400)
+
+    const event = await prisma.tournamentEvent.findUniqueOrThrow({ where: { id: eventId } })
+    if (event.maxEntries !== null) {
+      const count = await prisma.tournamentEntry.count({ where: { eventId } })
+      if (count >= event.maxEntries) throw new AppError('This event is full', 409)
+    }
+
+    const entry = await prisma.tournamentEntry.create({
+      data: { eventId, guestName: name.trim(), guestPartnerName: partnerName?.trim() ?? null },
+      include: entryIncludes,
+    })
+    res.status(201).json(entry)
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function removeEntry(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+  try {
+    const t = await prisma.tournament.findUniqueOrThrow({ where: { id: req.params.id } })
+    if (t.adminId !== req.user!.id && req.user!.role !== 'SUPER_ADMIN') throw new AppError('Forbidden', 403)
+
+    await prisma.tournamentEntry.delete({ where: { id: req.params.entryId } })
+    res.json({ success: true })
+  } catch (err) {
+    next(err)
+  }
+}
+
 export async function withdrawEntry(req: AuthenticatedRequest, res: Response, next: NextFunction) {
   try {
     const { eventId } = req.body as { eventId: string }

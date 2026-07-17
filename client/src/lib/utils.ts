@@ -19,12 +19,17 @@ export function getEntryName(entry: {
   team?: { name: string } | null
   player?: { user: { displayName: string } } | null
   partner?: { user: { displayName: string } } | null
+  guestName?: string | null
+  guestPartnerName?: string | null
 } | null | undefined): string {
   if (!entry) return 'TBD'
   if (entry.team) return entry.team.name
   if (entry.player) {
     const name = entry.player.user.displayName
     return entry.partner ? `${name} / ${entry.partner.user.displayName}` : name
+  }
+  if (entry.guestName) {
+    return entry.guestPartnerName ? `${entry.guestName} / ${entry.guestPartnerName}` : entry.guestName
   }
   return 'TBD'
 }

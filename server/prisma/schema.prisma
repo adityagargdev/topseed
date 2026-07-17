@@ -204,6 +204,10 @@ model TournamentEntry {
   partnerId String?
   partner   Player?         @relation("DoublesPartner", fields: [partnerId], references: [id])
 
+  // Admin-added entries (no Firebase account required)
+  guestName        String?
+  guestPartnerName String?
+
   seed         Int?
   registeredAt DateTime @default(now())
 
@@ -214,6 +218,7 @@ model TournamentEntry {
 
   @@unique([eventId, teamId])
   @@unique([eventId, playerId])
+  @@unique([eventId, guestName])
 }
 
 model Payment {

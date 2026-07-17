@@ -93,6 +93,8 @@ export interface TournamentEntry {
   teamId?: string | null
   playerId?: string | null
   partnerId?: string | null
+  guestName?: string | null
+  guestPartnerName?: string | null
   seed?: number | null
   team?: Team | null
   player?: Player | null

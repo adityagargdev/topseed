@@ -57,6 +57,12 @@ export const tournamentApi = {
   getWinners: (tournamentId: string, eventId: string) =>
     api.get(`/tournaments/${tournamentId}/winners`, { params: { eventId } }).then(r => r.data),
 
+  addGuestEntry: (tournamentId: string, eventId: string, name: string, partnerName?: string) =>
+    api.post<TournamentEntry>(`/tournaments/${tournamentId}/entries`, { eventId, name, partnerName }).then(r => r.data),
+
+  removeEntry: (tournamentId: string, entryId: string) =>
+    api.delete(`/tournaments/${tournamentId}/entries/${entryId}`).then(r => r.data),
+
   register: (tournamentId: string, eventId: string, teamId?: string, partnerId?: string) =>
     api.post<TournamentEntry>(`/tournaments/${tournamentId}/register`, { eventId, teamId, partnerId }).then(r => r.data),
 

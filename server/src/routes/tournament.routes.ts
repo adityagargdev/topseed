@@ -27,6 +27,8 @@ router.get('/:id/entries', optionalAuth, tc.getEntries)          // ?eventId=
 router.get('/:id/seedings', optionalAuth, tc.getSeedings)        // ?eventId=
 router.get('/:id/matches', optionalAuth, tc.getMatches)          // ?eventId= &date=
 router.get('/:id/winners', optionalAuth, tc.getWinners)          // ?eventId=
+router.post('/:id/entries', authenticate, requireAdmin, tc.addGuestEntry)            // body: { eventId, name, partnerName? }
+router.delete('/:id/entries/:entryId', authenticate, requireAdmin, tc.removeEntry)  // admin removes any entry
 router.post('/:id/register', authenticate, tc.registerEntry)     // body: { eventId, teamId?, partnerId? }
 router.delete('/:id/register', authenticate, tc.withdrawEntry)   // body: { eventId }
 router.patch('/:id/seedings', authenticate, requireAdmin, tc.updateSeedings)           // body: [{ entryId, seed }]
